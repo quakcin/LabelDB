@@ -96,7 +96,18 @@ class LabelDB
 
   private function select ($toks)
   {
-    return $toks;
+    $matches = [];
+    foreach ($this->pool as $line) {
+      if ($this->match($toks, $line)) {
+        $matches[] = $line;
+      }
+    }
+    return $matches;
+  }
+
+  private function match ($toks, $line)
+  {
+    return true;
   }
 
 }
