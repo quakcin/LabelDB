@@ -7,7 +7,7 @@
   $ins = $db->query("INS users 1 info Marty 24");
   var_dump($ins);
 
-  $sel = $db->query("SEL users *");
+  $sel = $db->query("SEL users * info * 24");
   var_dump($sel);
 
 

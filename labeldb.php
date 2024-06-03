@@ -98,16 +98,45 @@ class LabelDB
   {
     $matches = [];
     foreach ($this->pool as $line) {
-      if ($this->match($toks, $line)) {
-        $matches[] = $line;
+      $found = $this->match($toks, $line);
+      if (!empty($found)) {
+        $matches[] = implode(" ", $found);
       }
     }
+
+    /** TODO: Find better way to do this */
+    $matches = array_unique($matches);
+    foreach ($matches as &$match) {
+      $match = explode(" ", $match);
+    }
+
     return $matches;
   }
 
   private function match ($toks, $line)
   {
-    return true;
+    $matches = [];
+    if (count($line) < count($toks)) {
+      return [];
+    }
+
+    for ($i = 0; $i < count($toks); $i++) {
+      if ($toks[$i] == "*") {
+        $matches[] = $line[$i];
+        continue;
+      }
+
+      if ($toks[$i] != $line[$i]) {
+        return [];
+      }
+    }
+
+    return $matches;
+  }
+
+  private function unique ($rows)
+  {
+
   }
 
 }
