@@ -24,7 +24,8 @@ class LabelDB
     $cmds = [
       "SEL" => "select",
       "INS" => "insert",
-      "DEL" => "delete"
+      "DEL" => "delete",
+      "MOD" => "modify"
     ];
 
     if (!isset($cmds[$toks[0]])) {
@@ -92,7 +93,6 @@ class LabelDB
 
   private function deleteExact ($toks, &$data)
   {
-    echo "DEX: " . implode(" ", $toks) . "\n";
     $data = str_replace(implode(" ", $toks) . "\n", "", $data);
     if (count($toks) > 1) {
       array_pop($toks);
@@ -100,9 +100,24 @@ class LabelDB
     }
   }
 
+  private function modify ($toks)
+  {
+    return "mod";
+  }
+
   private function delete ($toks)
   {
-    return "del";
+    $pool = $this->loadPool();
+    $newData = [];
+
+    foreach ($pool as $line) {
+      $found = $this->match($toks, $line);
+      if (empty($found)) {
+        $newData[] = implode(" ", $line);
+      }
+    }
+
+    $this->storeData(implode("\n", $newData));
   }
 
   private function insert ($toks)
