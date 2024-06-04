@@ -3,7 +3,6 @@
 class LabelDB
 {
   private $file;
-  private $pool;
 
   /**
    * ----------------------------------------
@@ -14,7 +13,6 @@ class LabelDB
   public function __construct($file)
   {
     $this->file = $file;
-    $this->loadPool();
   }
 
   /**
@@ -42,6 +40,7 @@ class LabelDB
    */
   public function labelify ($str)
   {
+    return base64_encode(urlencode($str));
 
   }
 
@@ -50,7 +49,7 @@ class LabelDB
    */
   public function stringify ($label)
   {
-
+    return urldecode(base64_decode($label));
   }
 
   /**
@@ -59,15 +58,27 @@ class LabelDB
    * ----------------------------------------
    */
 
-  private function loadPool ()
+  private function loadData ()
   {
     if (!file_exists($this->file)) {
       file_put_contents($this->file, "");
     }
-    $this->pool = explode("\n", file_get_contents($this->file));
-    foreach ($this->pool as &$line) {
+    return file_get_contents($this->file);
+  }
+
+  private function loadPool ()
+  {
+    $pool = explode("\n", $this->loadData());
+    foreach ($pool as &$line) {
       $line = explode(" ", $line);
     }
+
+    return $pool;
+  }
+
+  private function storeData ($data)
+  {
+    file_put_contents($this->file, $data);
   }
 
   private function filterQuery ($query)
@@ -79,9 +90,14 @@ class LabelDB
     return $query;
   }
 
-  private function deleteExact ($row)
+  private function deleteExact ($toks, &$data)
   {
-
+    echo "DEX: " . implode(" ", $toks) . "\n";
+    $data = str_replace(implode(" ", $toks) . "\n", "", $data);
+    if (count($toks) > 1) {
+      array_pop($toks);
+      $this->deleteExact($toks, $data);
+    }
   }
 
   private function delete ($toks)
@@ -91,20 +107,24 @@ class LabelDB
 
   private function insert ($toks)
   {
-    return "ins";
+    $data = $this->loadData();
+    $this->deleteExact($toks, $data);
+    $data .= implode(" ", $toks) . "\n";
+    $this->storeData($data);
+    return true;
   }
 
   private function select ($toks)
   {
+    $pool = $this->loadPool();
     $matches = [];
-    foreach ($this->pool as $line) {
+    foreach ($pool as $line) {
       $found = $this->match($toks, $line);
       if (!empty($found)) {
         $matches[] = implode(" ", $found);
       }
     }
 
-    /** TODO: Find better way to do this */
     $matches = array_unique($matches);
     foreach ($matches as &$match) {
       $match = explode(" ", $match);
@@ -132,11 +152,6 @@ class LabelDB
     }
 
     return $matches;
-  }
-
-  private function unique ($rows)
-  {
-
   }
 
 }
