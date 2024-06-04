@@ -102,7 +102,24 @@ class LabelDB
 
   private function modify ($toks)
   {
-    return "mod";
+    $query_off = array_search("TO", $toks);
+
+    if (is_bool($query_off)) {
+      return false;
+    }
+
+    $query_mod = array_slice($toks, 0, $query_off);
+    $query_to = array_slice($toks, $query_off + 1);
+
+    $sel = $this->select($query_mod);
+    $data = $this->loadData();
+    foreach ($sel as $q) {
+      $this->deleteExact($this->inject($query_mod, $q), $data);
+      $this->storeData($data);
+      $this->insert($this->inject($query_mod, $query_to));
+    }
+
+    return true;
   }
 
   private function delete ($toks)
@@ -167,6 +184,22 @@ class LabelDB
     }
 
     return $matches;
+  }
+
+  /**
+   * Replaces * in $toks to values from $with
+   */
+  private function inject ($toks, $with)
+  {
+    while (count($with) > 0) {
+      $curr = array_shift($with);
+      $idx = array_search("*", $toks);
+      if (is_bool($idx)) {
+        return false;
+      }
+      $toks[$idx] = $curr;
+    }
+    return $toks;
   }
 
 }
